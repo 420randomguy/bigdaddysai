@@ -1270,10 +1270,6 @@ window.addEventListener('load', function() {
   fetchHistory();
   setupProfileMenu();
   optimizeVideoLoading();
-  ultraPerformanceResize();
-  setupAdvancedVideoObserver();
-  adjustColumnCount();
-  layoutMasonry();
   checkFalBalance();
   
   // Clear old active tasks to stop polling spam
@@ -1308,16 +1304,6 @@ window.addEventListener('load', function() {
   setInterval(fetchHistory, 30000); // Refresh history every 30 seconds
 });
 
-const debouncedAdjustLayout = debounce(() => {
-  adjustColumnCount();
-  optimizeVideoLoading();
-  setupAdvancedVideoObserver();
-}, 200);
-
-['resize', 'orientationchange'].forEach(event => {
-});
-
-window.addEventListener('resize', debounce(recalculateLayout, 250));
 setInterval(cleanupOldTasks, 3600000);
 
 function cleanupOldTasks() {
