@@ -1,4 +1,3 @@
-// api/status/status.js
 import fetch from "node-fetch";
 import { put, list } from "@vercel/blob";
 
@@ -16,7 +15,6 @@ export default async function handler(req, res) {
     if (!apiKey) {
       return res.status(400).json({ error: "Missing FAL API key" });
     }
-
     const storeId = process.env.STORE_ID || "store_CKJawqvrYtN9o7F1";
     const { blobs } = await list({ storeId });
     const historyBlob = blobs.find((blob) => blob.pathname === "history.json");
@@ -30,11 +28,12 @@ export default async function handler(req, res) {
       }
     }
 
+    // Find the history entry corresponding to the provided request_id
     const videoEntry = history.find((item) => item.request_id === request_id);
     let statusUrl = videoEntry?.status_url;
     const isTempRequest = request_id.startsWith("temp-");
-
     let statusResponse;
+
     if (isTempRequest || !statusUrl) {
       console.log(`Using queue status for ${request_id}`);
       statusResponse = await fetch("https://queue.fal.run/fal-ai/wan-pro/image-to-video/status", {
@@ -64,19 +63,24 @@ export default async function handler(req, res) {
     const statusData = await statusResponse.json();
     console.log("Status data:", statusData);
 
+    // If the final request_id is different from the temporary one, merge the records
     const realRequestId = statusData.request_id || request_id;
     if (realRequestId !== request_id) {
       const itemIndex = history.findIndex((item) => item.request_id === request_id);
       if (itemIndex !== -1) {
-        history[itemIndex].request_id = realRequestId;
-        history[itemIndex].status_url = statusData.status_url || `https://queue.fal.run/fal-ai/wan-pro/requests/${realRequestId}/status`;
+        history[itemIndex] = {
+          ...history[itemIndex],
+          request_id: realRequestId,
+          status_url: statusData.status_url || `https://queue.fal.run/fal-ai/wan-pro/requests/${realRequestId}/status`,
+          status: statusData.status,
+        };
         await put("history.json", JSON.stringify(history), { access: "public", storeId });
-        console.log(`Updated history: replaced ${request_id} with real request_id ${realRequestId}`);
+        console.log(`Updated history: replaced ${request_id} with final request_id ${realRequestId}`);
         request_id = realRequestId;
       }
     }
 
-    let state = statusData.status; // "IN_QUEUE", "IN_PROGRESS", "COMPLETED", "FAILED"
+    let state = statusData.status; // Expected values: "IN_QUEUE", "IN_PROGRESS", "COMPLETED", "FAILED"
     let videoUrl = null;
     let lowResVideoUrl = null;
     let logs = statusData.logs || [];
@@ -112,6 +116,7 @@ export default async function handler(req, res) {
       }
     }
 
+    // Update the history record if the status or video URL has changed
     const itemIndex = history.findIndex((item) => item.request_id === request_id);
     if (itemIndex !== -1 && (history[itemIndex].status !== state || (videoUrl && !history[itemIndex].video_url))) {
       history[itemIndex].status = state;
