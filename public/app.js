@@ -624,11 +624,6 @@ function fetchHistory() {
           }
           attachDragEvents(card);
         });
-
-        updateVideoGallery();
-        filterHistoryByCategory();
-        adjustColumnCount();
-        console.log("Successfully retrieved", videos.length, "history items");
         resolve();
       })
       .catch(error => {
@@ -986,14 +981,6 @@ function closeCategoryPrompt() {
 }
 
 // Performance and Layout
-function adjustColumnCount() {
-  const historyContainer = document.getElementById('history');
-  const containerWidth = historyContainer.offsetWidth;
-  const cardWidth = 300;
-  historyContainer.style.display = 'block';
-  historyContainer.style.columnWidth = `${cardWidth}px`;
-  historyContainer.style.columnGap = '20px';
-}
 
 function optimizeVideoLoading() {
   const videos = document.querySelectorAll('.history-card video');
@@ -1001,44 +988,6 @@ function optimizeVideoLoading() {
     video.setAttribute('preload', 'metadata');
     video.setAttribute('loading', 'lazy');
     video.setAttribute('decoding', 'async');
-  });
-}
-
-function setupAdvancedVideoObserver() {
-  const videoObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const video = entry.target;
-      const card = video.closest('.history-card');
-      if (entry.isIntersecting) {
-        video.preload = 'auto';
-        card.style.transition = 'opacity 0.3s ease';
-        card.style.opacity = '1';
-      } else {
-        video.pause();
-      }
-    });
-  }, {
-    root: null,
-    rootMargin: '500px',
-    threshold: [0, 0.5, 1]
-  });
-
-  document.querySelectorAll('.history-card video').forEach(video => {
-    video.preload = 'metadata';
-    videoObserver.observe(video);
-  });
-}
-
-function ultraPerformanceResize() {
-  const historyContainer = document.getElementById('history');
-  historyContainer.style.contain = 'layout';
-  historyContainer.style.willChange = 'transform';
-  document.body.style.transform = 'translateZ(0)';
-  historyContainer.style.display = 'grid';
-  historyContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
-  historyContainer.style.gap = '20px';
-  requestAnimationFrame(() => {
-    historyContainer.style.backfaceVisibility = 'hidden';
   });
 }
 
