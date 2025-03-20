@@ -34,6 +34,7 @@ export default async function handler(req, res) {
     const isTempRequest = request_id.startsWith("temp-");
     let statusResponse;
 
+    // If it's a temporary request or there's no status_url stored, use the generic queue endpoint.
     if (isTempRequest || !statusUrl) {
       console.log(`Using queue status for ${request_id}`);
       statusResponse = await fetch("https://queue.fal.run/fal-ai/wan-pro/image-to-video/status", {
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
     const statusData = await statusResponse.json();
     console.log("Status data:", statusData);
 
-    // If the final request_id is different from the temporary one, merge the records
+    // If Fal.ai returns a different (final) request_id, merge it into our history record.
     const realRequestId = statusData.request_id || request_id;
     if (realRequestId !== request_id) {
       const itemIndex = history.findIndex((item) => item.request_id === request_id);
@@ -76,7 +77,7 @@ export default async function handler(req, res) {
         };
         await put("history.json", JSON.stringify(history), { access: "public", storeId });
         console.log(`Updated history: replaced ${request_id} with final request_id ${realRequestId}`);
-        request_id = realRequestId;
+        request_id = realRequestId; // update our variable so that subsequent logic uses the final id
       }
     }
 
@@ -116,7 +117,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Update the history record if the status or video URL has changed
+    // Update the history record if the status or video URL has changed.
     const itemIndex = history.findIndex((item) => item.request_id === request_id);
     if (itemIndex !== -1 && (history[itemIndex].status !== state || (videoUrl && !history[itemIndex].video_url))) {
       history[itemIndex].status = state;
@@ -127,7 +128,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      request_id,
+      request_id, // final (updated) request_id if changed
       status: state,
       logs,
       video_url: videoUrl,
