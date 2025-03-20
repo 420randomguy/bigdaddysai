@@ -10,6 +10,39 @@ export const config = {
   },
 };
 
+// Add this helper function after your import statements
+async function updateHistory(newRecord) {
+  const storeId = process.env.STORE_ID || "store_CKJawqvrYtN9o7F1";
+  const maxAttempts = 5;
+  let attempts = 0;
+  while (attempts < maxAttempts) {
+    try {
+      const { blobs } = await list({ storeId });
+      const historyBlob = blobs.find((blob) => blob.pathname === "history.json");
+      let history = [];
+      if (historyBlob && historyBlob.url) {
+        const historyResponse = await fetch(historyBlob.url);
+        if (historyResponse.ok) {
+          history = await historyResponse.json();
+        }
+      }
+      history.push(newRecord);
+      await put("history.json", JSON.stringify(history), { access: "public", storeId });
+      console.log("8. History updated successfully with request_id:", newRecord.request_id);
+      return;
+    } catch (error) {
+      attempts++;
+      console.error(`Attempt ${attempts} failed to update history:`, error);
+      if (attempts >= maxAttempts) {
+        throw error;
+      }
+      // Wait 500ms before retrying
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+}
+
+
 export default async function handler(req, res) {
   console.log("1. Request hit /api/generate");
 
@@ -199,23 +232,12 @@ export default async function handler(req, res) {
       };
 
       try {
-        const storeId = process.env.STORE_ID || "store_CKJawqvrYtN9o7F1";
-        const { blobs } = await list({ storeId });
-        const historyBlob = blobs.find((blob) => blob.pathname === "history.json");
-        let history = [];
-        if (historyBlob && historyBlob.url) {
-          const historyResponse = await fetch(historyBlob.url);
-          if (historyResponse.ok) {
-            history = await historyResponse.json();
-          }
-        }
-        history.push(newRecord);
-        await put("history.json", JSON.stringify(history), { access: "public", storeId });
-        console.log("8. History updated successfully with request_id:", requestId);
+        await updateHistory(newRecord);
       } catch (historyError) {
         console.error("Error updating history:", historyError);
         return res.status(500).json({ error: "Failed to update history", details: historyError.message });
       }
+     
 
       console.log("9. Sending response to client with request_id:", requestId);
       return res.status(200).json({
