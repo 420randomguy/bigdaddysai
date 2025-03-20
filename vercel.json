@@ -1,12 +1,20 @@
 {
-    "version": 2,
-    "builds": [
-      { "src": "api/**/*.js", "use": "@vercel/node" },
-      { "src": "public/**/*", "use": "@vercel/static" }
-    ],
-    "routes": [
-      { "src": "/api/(.*)", "dest": "/api/$1" },
-      { "src": "/(.*)", "dest": "/public/$1" }
-    ]
-  }
-  
+  "version": 2,
+  "builds": [
+    { "src": "api/**/*.js", "use": "@vercel/node" },
+    { "src": "public/**/*", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/generate", "dest": "/api/generate/generate.js" },
+    { "src": "/api/history", "dest": "/api/history/history.js" },
+    { "src": "/api/status", "dest": "/api/status/status.js" },
+    { "src": "/api/remove_category", "dest": "/api/remove_category/remove_category.js" },
+    { "src": "/api/categories", "dest": "/api/categories/categories.js" },
+    { "src": "/api/update-history", "dest": "/api/update-history/update_history.js" },
+    { "src": "/api/delete", "dest": "/api/delete/delete.js" },
+    { "src": "/api/fal-balance", "dest": "/api/fal-balance/fal_balance.js" },
+    { "src": "/api/move_video", "dest": "/api/move_video/move_video.js" },
+    { "src": "/api/update-api-key", "dest": "/api/update-api-key/update_api_key.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}
