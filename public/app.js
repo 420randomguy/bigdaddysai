@@ -1042,35 +1042,6 @@ function ultraPerformanceResize() {
   });
 }
 
-function layoutMasonry() {
-  const container = document.getElementById('masonry-container');
-  if (!container) return;
-  const items = Array.from(container.getElementsByClassName('masonry-item'));
-  const containerWidth = container.clientWidth;
-  const cardWidth = 280;
-  const gap = 10;
-  const numCols = Math.max(1, Math.floor((containerWidth + gap) / (cardWidth + gap)));
-  const colHeights = new Array(numCols).fill(0);
-
-  items.forEach(item => {
-    item.style.width = cardWidth + 'px';
-    let minCol = 0;
-    for (let i = 1; i < numCols; i++) {
-      if (colHeights[i] < colHeights[minCol]) {
-        minCol = i;
-      }
-    }
-    const left = minCol * (cardWidth + gap);
-    const top = colHeights[minCol];
-    item.style.position = 'absolute';
-    item.style.left = left + 'px';
-    item.style.top = top + 'px';
-    colHeights[minCol] += item.offsetHeight + gap;
-  });
-
-  container.style.height = Math.max(...colHeights) + 'px';
-}
-
 // Balance and API Key Management
 async function checkFalBalance() {
   try {
@@ -1341,14 +1312,12 @@ const debouncedAdjustLayout = debounce(() => {
   adjustColumnCount();
   optimizeVideoLoading();
   setupAdvancedVideoObserver();
-  layoutMasonry();
 }, 200);
 
 ['resize', 'orientationchange'].forEach(event => {
-  window.addEventListener(event, debouncedAdjustLayout);
 });
 
-window.addEventListener('resize', throttle(adjustColumnCount, 100));
+window.addEventListener('resize', debounce(recalculateLayout, 250));
 setInterval(cleanupOldTasks, 3600000);
 
 function cleanupOldTasks() {
